@@ -170,14 +170,15 @@ void mxml_deallocate(void)
 
 int mxml_write_line(MXML_WRITER *writer, const char *line)
 {
-   int len;
+   unsigned len;
    
-   len = (int)strlen(line);
+   len = strlen(line);
 
    if (writer->buffer) {
       if (writer->buffer_len + len >= writer->buffer_size) {
-         writer->buffer_size += 10000;
+         writer->buffer_size += len + 10000;
          writer->buffer = (char *)mxml_realloc(writer->buffer, writer->buffer_size);
+	 assert(writer->buffer);
       }
       strcpy(writer->buffer + writer->buffer_len, line);
       writer->buffer_len += len;
