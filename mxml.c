@@ -392,7 +392,7 @@ int mxml_start_element1(MXML_WRITER *writer, const char *name, int indent)
 
    unsigned len = strlen(name);
    unsigned name_enc_size = len*6+10;
-   char* name_enc = mxml_malloc(name_enc_size);
+   char* name_enc = (char*)mxml_malloc(name_enc_size);
    mxml_encode(name_enc, name_enc_size, name, strlen(name), writer->translate);
    strlcat(line, name_enc, sizeof(line)); // FIXME: data will be truncated
 
@@ -508,7 +508,7 @@ int mxml_write_value(MXML_WRITER *writer, const char *data)
 
    unsigned len = strlen(data);
    unsigned size = 6*len + 1000;
-   char* buf = mxml_malloc(size);
+   char* buf = (char*)mxml_malloc(size);
    strcpy(buf, data);
    mxml_encode(buf, size, data, len, writer->translate);
    int v = mxml_write_line(writer, buf) == (int)strlen(buf);
