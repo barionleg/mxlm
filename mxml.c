@@ -1993,6 +1993,7 @@ error:
    for (ip = 0; ip < MXML_MAX_ENTITY; ip++)
       if (entity_value[ip] != NULL)
          mxml_free(entity_value[ip]);
+   mxml_free_tree(root);
 
    return status;
 }
