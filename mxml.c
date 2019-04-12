@@ -155,7 +155,7 @@ int mxml_write_line(MXML_WRITER *writer, const char *line)
    len = strlen(line);
 
    if (writer->buffer) {
-      if (writer->buffer_len + len >= writer->buffer_size) {
+      if (writer->buffer_len + (int)len >= writer->buffer_size) {
          writer->buffer_size += len + 10000;
          writer->buffer = (char *)mxml_realloc(writer->buffer, writer->buffer_size);
          assert(writer->buffer);
