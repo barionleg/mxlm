@@ -98,4 +98,9 @@ size_t strlcat(char *dst, const char *src, size_t size)
 
 /*-------------------------------------------------------------------*/
 
+#else
+size_t strlcpy_dummy(void) // dummy to avoid linker warnings
+{
+   return 0;
+}
 #endif // STRLCPY_DEFINED

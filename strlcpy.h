@@ -46,6 +46,8 @@ extern "C" {
 #ifndef STRLCPY_DEFINED
 size_t EXPRT strlcpy(char *dst, const char *src, size_t size);
 size_t EXPRT strlcat(char *dst, const char *src, size_t size);
+#else
+size_t EXPRT strlcpy_dummy(void);
 #endif
 
 #ifdef __cplusplus
