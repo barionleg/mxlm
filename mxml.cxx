@@ -1310,8 +1310,6 @@ PMXML_NODE read_error(PMXML_NODE root, const char *file_name, int line_number, c
    }
    
    mxml_free(msg);
-   mxml_free_tree(root);
-
    return NULL;
 }
 
