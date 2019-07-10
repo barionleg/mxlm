@@ -1310,6 +1310,8 @@ PMXML_NODE read_error(PMXML_NODE root, const char *file_name, int line_number, c
    }
    
    mxml_free(msg);
+   mxml_free_tree(root);
+
    return NULL;
 }
 
@@ -2013,6 +2015,8 @@ int mxml_parse_entity(char **buf, const char *file_name, char *error, int error_
    } while (*p);
    *pv = 0;
 
+   mxml_free_tree(root);
+
 error:
 
    if (buffer != NULL)
@@ -2020,7 +2024,6 @@ error:
    for (ip = 0; ip < MXML_MAX_ENTITY; ip++)
       if (entity_value[ip] != NULL)
          mxml_free(entity_value[ip]);
-   mxml_free_tree(root);
 
    return status;
 }
