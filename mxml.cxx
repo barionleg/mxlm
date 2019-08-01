@@ -423,7 +423,6 @@ int mxml_start_element1(MXML_WRITER *writer, const char *name, int indent)
    char* name_enc = (char*)mxml_malloc(name_enc_size);
    mxml_encode(name_enc, name_enc_size, name, strlen(name), writer->translate);
    line += name_enc;
-   mxml_free(name_enc);
 
    /* put element on stack */
    if (writer->level == 0)
