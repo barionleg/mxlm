@@ -206,28 +206,30 @@ int mxml_write_line(MXML_WRITER *writer, const char *line)
  */
 MXML_WRITER *mxml_open_buffer(void)
 {
-   char str[256], line[1000];
-   time_t now;
-   MXML_WRITER *writer;
-
-   writer = (MXML_WRITER *)mxml_malloc(sizeof(MXML_WRITER));
+   MXML_WRITER *writer = (MXML_WRITER *)mxml_malloc(sizeof(MXML_WRITER));
    memset(writer, 0, sizeof(MXML_WRITER));
    writer->translate = 1;
 
    writer->buffer_size = 10000;
-   writer->buffer = (char *)mxml_malloc(10000);
+   writer->buffer = (char *)mxml_malloc(writer->buffer_size);
+   assert(writer->buffer != NULL);
    writer->buffer[0] = 0;
    writer->buffer_len = 0;
 
    /* write XML header */
-   strcpy(line, "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n");
-   mxml_write_line(writer, line);
-   time(&now);
-   strcpy(str, ctime(&now));
-   str[24] = 0;
-   sprintf(line, "<!-- created by MXML on %s -->\n", str);
-   if (mxml_suppress_date_flag == 0)
-      mxml_write_line(writer, line);
+   mxml_write_line(writer, "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n");
+
+   if (mxml_suppress_date_flag == 0) {
+      time_t now = time(NULL);
+      std::string str = ctime(&now);
+      str[24] = 0;
+      std::string line = "";
+      //sprintf(line, "<!-- created by MXML on %s -->\n", str);
+      line +=  "<!-- created by MXML on ";
+      line += str;
+      line += " -->\n";
+      mxml_write_line(writer, line.c_str());
+   }
 
    /* initialize stack */
    writer->level = 0;
