@@ -238,7 +238,7 @@ MXML_WRITER *mxml_open_buffer(void)
    if (mxml_suppress_date_flag == 0) {
       time_t now = time(NULL);
       std::string str = ctime(&now);
-      str[24] = 0;
+      str.resize(24);
       std::string line = "";
       //sprintf(line, "<!-- created by MXML on %s -->\n", str);
       line +=  "<!-- created by MXML on ";
@@ -294,7 +294,7 @@ MXML_WRITER *mxml_open_file(const char *file_name)
    if (mxml_suppress_date_flag == 0) {
       time_t now = time(NULL);
       std::string str = ctime(&now);
-      str[24] = 0;
+      str.resize(24);
       std::string line = "";
       //sprintf(line, "<!-- created by MXML on %s -->\n", str);
       line += "<!-- created by MXML on ";
