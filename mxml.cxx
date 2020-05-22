@@ -197,17 +197,15 @@ void mxml_free(void *p)
 
 int mxml_write_line(MXML_WRITER *writer, const char *line)
 {
-   unsigned len;
-   
-   len = strlen(line);
+   int len = strlen(line);
 
    if (writer->buffer) {
-      if (writer->buffer_len + (int)len >= writer->buffer_size) {
+      if (writer->buffer_len + len >= writer->buffer_size) {
          writer->buffer_size += len + 10000;
          writer->buffer = (char *)mxml_realloc(writer->buffer, writer->buffer_size);
          assert(writer->buffer);
       }
-      strcpy(writer->buffer + writer->buffer_len, line);
+      memcpy(writer->buffer + writer->buffer_len, line, len+1);
       writer->buffer_len += len;
       return len;
    } else {
@@ -496,8 +494,7 @@ int mxml_end_element(MXML_WRITER *writer)
       mxml_free(writer->stack[writer->level]);
       if (writer->level == 0)
          mxml_free(writer->stack);
-      char line[10];
-      strcpy(line, "/>\n");
+      const char* line = "/>\n";
       return mxml_write_line(writer, line) == (int)strlen(line);
    }
 
@@ -560,7 +557,7 @@ int mxml_write_value(MXML_WRITER *writer, const char *data)
    unsigned len = strlen(data);
    unsigned size = 6*len + 1000;
    char* buf = (char*)mxml_malloc(size);
-   strcpy(buf, data);
+   memcpy(buf, data, len+1);
    mxml_encode(buf, size, data, len, writer->translate);
    int v = mxml_write_line(writer, buf) == (int)strlen(buf);
    mxml_free(buf);
@@ -686,7 +683,7 @@ PMXML_NODE mxml_create_root_node(void)
    PMXML_NODE root;
 
    root = (PMXML_NODE)calloc(sizeof(MXML_NODE), 1);
-   strcpy(root->name, "root");
+   strcpy(root->name, "root"); // SAFE
    root->node_type = DOCUMENT_NODE;
 
    return root;
@@ -731,9 +728,10 @@ PMXML_NODE mxml_add_special_node_at(PMXML_NODE parent, int node_type, const char
    parent->n_children++;
 
    if (value && *value) {
-      pnode->value = (char *)mxml_malloc(strlen(value)+1);
+      int len = strlen(value);
+      pnode->value = (char *)mxml_malloc(len+1);
       assert(pnode->value);
-      strcpy(pnode->value, value);
+      memcpy(pnode->value, value, len+1);
    }
 
    return pnode;
@@ -852,8 +850,10 @@ int mxml_add_attribute(PMXML_NODE pnode, const char *attrib_name, const char *at
    }
 
    mxml_strlcpy(pnode->attribute_name+pnode->n_attributes*MXML_NAME_LENGTH, attrib_name, MXML_NAME_LENGTH);
-   pnode->attribute_value[pnode->n_attributes] = (char *)mxml_malloc(strlen(attrib_value)+1);
-   strcpy(pnode->attribute_value[pnode->n_attributes], attrib_value);
+   int len = strlen(attrib_value);
+   pnode->attribute_value[pnode->n_attributes] = (char *)mxml_malloc(len+1);
+   assert(pnode->attribute_value[pnode->n_attributes] != NULL);
+   memcpy(pnode->attribute_value[pnode->n_attributes], attrib_value, len+1);
    pnode->n_attributes++;
 
    return TRUE;
@@ -1156,15 +1156,16 @@ int mxml_replace_node_name(PMXML_NODE pnode, const char *name)
 
 int mxml_replace_node_value(PMXML_NODE pnode, const char *value)
 {
+   int len = strlen(value);
    if (pnode->value)
-      pnode->value = (char *)mxml_realloc(pnode->value, strlen(value)+1);
+      pnode->value = (char *)mxml_realloc(pnode->value, len+1);
    else if (value)
-      pnode->value = (char *)mxml_malloc(strlen(value)+1);
+      pnode->value = (char *)mxml_malloc(len+1);
    else
       pnode->value = NULL;
    
    if (value)
-      strcpy(pnode->value, value);
+      memcpy(pnode->value, value, len+1);
 
    return TRUE;
 }
@@ -1230,8 +1231,9 @@ int mxml_replace_attribute_value(PMXML_NODE pnode, const char *attrib_name, cons
    if (i == pnode->n_attributes)
       return FALSE;
 
-   pnode->attribute_value[i] = (char *)mxml_realloc(pnode->attribute_value[i], strlen(attrib_value)+1);
-   strcpy(pnode->attribute_value[i], attrib_value);
+   int len = strlen(attrib_value);
+   pnode->attribute_value[i] = (char *)mxml_realloc(pnode->attribute_value[i], len+1);
+   memcpy(pnode->attribute_value[i], attrib_value, len+1);
    return TRUE;
 }
 
@@ -1286,7 +1288,7 @@ int mxml_delete_attribute(PMXML_NODE pnode, const char *attrib_name)
 
    mxml_free(pnode->attribute_value[i]);
    for (j=i ; j<pnode->n_attributes-1 ; j++) {
-      strcpy(pnode->attribute_name+j*MXML_NAME_LENGTH, pnode->attribute_name+(j+1)*MXML_NAME_LENGTH);
+      mxml_strlcpy(pnode->attribute_name+j*MXML_NAME_LENGTH, pnode->attribute_name+(j+1)*MXML_NAME_LENGTH, MXML_NAME_LENGTH);
       pnode->attribute_value[j] = pnode->attribute_value[j+1];
    }
 
