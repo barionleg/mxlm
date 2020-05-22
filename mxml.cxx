@@ -1685,16 +1685,13 @@ int mxml_parse_entity(char **buf, const char *file_name, char *error, int error_
    int entity_type[MXML_MAX_ENTITY];    /* internal or external */
    int entity_line_number[MXML_MAX_ENTITY];
    int nentity;
-   int fh, length, len;
-   char *buffer;
-   int ip;                      /* counter for entity value */
-   char directoryname[FILENAME_MAX];
+   int fh, length;
    int entity_value_length[MXML_MAX_ENTITY];
    int entity_name_length[MXML_MAX_ENTITY];
 
    PMXML_NODE root = mxml_create_root_node();   /* dummy for 'HERE' */
 
-   for (ip = 0; ip < MXML_MAX_ENTITY; ip++)
+   for (int ip = 0; ip < MXML_MAX_ENTITY; ip++)
       entity_value[ip] = NULL;
 
    line_number = 1;
@@ -1704,17 +1701,19 @@ int mxml_parse_entity(char **buf, const char *file_name, char *error, int error_
    if (!buf || !(*buf) || !strlen(*buf))
       return 0;
 
-   strcpy(directoryname, file_name);
+   char directoryname[FILENAME_MAX];
+   mxml_strlcpy(directoryname, file_name, FILENAME_MAX);
    mxml_dirname(directoryname);
 
    /* copy string to temporary space */
-   buffer = (char *) mxml_malloc(strlen(*buf) + 1);
+   int len = strlen(*buf);
+   char* buffer = (char *) mxml_malloc(len+1);
    if (buffer == NULL) {
       read_error(HERE, "Cannot allocate memory.");
       status = 1;
       goto error;
    }
-   strcpy(buffer, *buf);
+   memcpy(buffer, *buf, len+1);
 
    p = strstr(buffer, "!DOCTYPE");
    if (p == NULL) {             /* no entities */
@@ -1917,15 +1916,16 @@ int mxml_parse_entity(char **buf, const char *file_name, char *error, int error_
             mxml_decode(replacement);
 
             if (entity_type[nentity] == EXTERNAL_ENTITY) {
-               strcpy(entity_reference_name[nentity], replacement);
+               mxml_strlcpy(entity_reference_name[nentity], replacement, sizeof(entity_reference_name[nentity]));
             } else {
-               entity_value[nentity] = (char *) mxml_malloc(strlen(replacement));
+               int rlen = strlen(replacement);
+               entity_value[nentity] = (char *) mxml_malloc(rlen+1);
                if (entity_value[nentity] == NULL) {
                   read_error(HERE, "Cannot allocate memory.");
                   status = 1;
                   goto error;
                }
-               strcpy(entity_value[nentity], replacement);
+               memcpy(entity_value[nentity], replacement, rlen+1);
             }
             mxml_free(replacement);
 
@@ -2057,7 +2057,7 @@ error:
 
    if (buffer != NULL)
       mxml_free(buffer);
-   for (ip = 0; ip < MXML_MAX_ENTITY; ip++)
+   for (int ip = 0; ip < MXML_MAX_ENTITY; ip++)
       if (entity_value[ip] != NULL)
          mxml_free(entity_value[ip]);
 
