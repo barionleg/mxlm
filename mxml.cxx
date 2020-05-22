@@ -156,6 +156,24 @@ static size_t mxml_strlcpy(char *dst, const char *src, size_t size)
 
 /*------------------------------------------------------------------*/
 
+static std::string toString(int i)
+{
+   char buf[100];
+   sprintf(buf, "%d", i);
+   return buf;
+}
+
+/*------------------------------------------------------------------*/
+
+static std::string toStrerror(int err)
+{
+   char buf[256];
+   sprintf(buf, "errno %d (%s)", err, strerror(err));
+   return buf;
+}
+
+/*------------------------------------------------------------------*/
+
 void *mxml_malloc(size_t size)
 {
    return malloc(size);
@@ -255,32 +273,37 @@ void mxml_suppress_date(int suppress)
  */
 MXML_WRITER *mxml_open_file(const char *file_name) 
 {
-   char str[256], line[1000];
-   time_t now;
-   MXML_WRITER *writer;
-
-   writer = (MXML_WRITER *)mxml_malloc(sizeof(MXML_WRITER));
+   MXML_WRITER* writer = (MXML_WRITER *)mxml_malloc(sizeof(MXML_WRITER));
    memset(writer, 0, sizeof(MXML_WRITER));
    writer->translate = 1;
 
    writer->fh = open(file_name, O_RDWR | O_CREAT | O_TRUNC | O_TEXT, 0644);
 
    if (writer->fh == -1) {
-      sprintf(line, "Unable to open file \"%s\": ", file_name);
-      perror(line);
+      std::string line = "";
+      //sprintf(line, "Unable to open file \"%s\": ", file_name);
+      line += "Unable to open file \"";
+      line += file_name;
+      line += "\": ";
+      line += toStrerror(errno);
+      fprintf(stderr, "%s\n", line.c_str());
       mxml_free(writer);
       return NULL;
    }
 
    /* write XML header */
-   strcpy(line, "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n");
-   mxml_write_line(writer, line);
-   time(&now);
-   strcpy(str, ctime(&now));
-   str[24] = 0;
-   sprintf(line, "<!-- created by MXML on %s -->\n", str);
-   if (mxml_suppress_date_flag == 0)
-      mxml_write_line(writer, line);
+   mxml_write_line(writer, "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n");
+   if (mxml_suppress_date_flag == 0) {
+      time_t now = time(NULL);
+      std::string str = ctime(&now);
+      str[24] = 0;
+      std::string line = "";
+      //sprintf(line, "<!-- created by MXML on %s -->\n", str);
+      line += "<!-- created by MXML on ";
+      line += str;
+      line += " -->\n";
+      mxml_write_line(writer, line.c_str());
+   }
 
    /* initialize stack */
    writer->level = 0;
@@ -1287,30 +1310,36 @@ int mxml_delete_attribute(PMXML_NODE pnode, const char *attrib_name)
  */
 PMXML_NODE read_error(PMXML_NODE root, const char *file_name, int line_number, char *error, int error_size, int *error_line, const char *format, ...)
 {
-   char *msg, str[1000];
-   va_list argptr;
-
-   if (file_name && file_name[0])
-      sprintf(str, "XML read error in file \"%s\", line %d: ", file_name, line_number);
-   else
-      sprintf(str, "XML read error, line %d: ", line_number);
-   msg = (char *)mxml_malloc(error_size);
-   if (error) {
-      mxml_strlcpy(error, str, error_size);
+   std::string msg;
+   if (file_name && file_name[0]) {
+      //sprintf(str, "XML read error in file \"%s\", line %d: ", file_name, line_number);
+      msg += "XML read error in file \"";
+      msg += file_name;
+      msg += "\", line ";
+      msg += toString(line_number);
+      msg += ": ";
+   } else {
+      //sprintf(str, "XML read error, line %d: ", line_number);
+      msg += "XML read error, line ";
+      msg += toString(line_number);
+      msg += ": ";
    }
 
+   char str[1000];
+   va_list argptr;
    va_start(argptr, format);
-   vsprintf(str, (char *) format, argptr);
+   vsnprintf(str, sizeof(str), (char *) format, argptr);
    va_end(argptr);
 
+   msg += str;
+
    if (error) {
-      mxml_strlcpy(error, str, error_size);
+      mxml_strlcpy(error, msg.c_str(), error_size);
    }
    if (error_line) {
       *error_line = line_number;
    }
    
-   mxml_free(msg);
    mxml_free_tree(root);
 
    return NULL;
@@ -1658,7 +1687,6 @@ int mxml_parse_entity(char **buf, const char *file_name, char *error, int error_
    char *buffer;
    int ip;                      /* counter for entity value */
    char directoryname[FILENAME_MAX];
-   char filename[FILENAME_MAX];
    int entity_value_length[MXML_MAX_ENTITY];
    int entity_name_length[MXML_MAX_ENTITY];
 
@@ -1925,11 +1953,16 @@ int mxml_parse_entity(char **buf, const char *file_name, char *error, int error_
    /* read external file */
    for (i = 0; i < nentity; i++) {
       if (entity_type[i] == EXTERNAL_ENTITY) {
-         if ( entity_reference_name[i][0] == DIR_SEPARATOR ) /* absolute path */
-            strcpy(filename, entity_reference_name[i]);
-         else /* relative path */
-            sprintf(filename, "%s%c%s", directoryname, DIR_SEPARATOR, entity_reference_name[i]);
-         fh = open(filename, O_RDONLY | O_TEXT, 0644);
+         std::string filename;
+         if ( entity_reference_name[i][0] == DIR_SEPARATOR ) { /* absolute path */
+            filename = entity_reference_name[i];
+         } else { /* relative path */
+            //sprintf(filename, "%s%c%s", directoryname, DIR_SEPARATOR, entity_reference_name[i]);
+            filename += directoryname;
+            filename += DIR_SEPARATOR;
+            filename += entity_reference_name[i];
+         }
+         fh = open(filename.c_str(), O_RDONLY | O_TEXT, 0644);
 
          if (fh == -1) {
             line_number = entity_line_number[i];
@@ -1963,7 +1996,7 @@ int mxml_parse_entity(char **buf, const char *file_name, char *error, int error_
                close(fh);
 
                /* recursive parse */
-               if (mxml_parse_entity(&entity_value[i], filename, error, error_size, error_line) != 0) {
+               if (mxml_parse_entity(&entity_value[i], filename.c_str(), error, error_size, error_line) != 0) {
                   status = 1;
                   goto error;
                }
@@ -2037,43 +2070,55 @@ error:
  */
 PMXML_NODE mxml_parse_file(const char *file_name, char *error, int error_size, int *error_line)
 {
-   char *buf;
-   int fh, length;
-   PMXML_NODE root;
-
    if (error)
       error[0] = 0;
 
-   fh = open(file_name, O_RDONLY | O_TEXT, 0644);
+   int fh = open(file_name, O_RDONLY | O_TEXT, 0644);
 
    if (fh == -1) {
       std::string msg = "";
-      msg += "Unable to open file \"";
+      msg += "Cannot open file \"";
       msg += file_name;
       msg += "\": ";
-      char buf[256];
-      sprintf(buf, "errno %d (%s)", errno, strerror(errno));
-      msg += buf;
+      msg += toStrerror(errno);
       mxml_strlcpy(error, msg.c_str(), error_size);
       return NULL;
    }
 
-   length = (int)lseek(fh, 0, SEEK_END);
+   off_t length = lseek(fh, 0, SEEK_END);
    lseek(fh, 0, SEEK_SET);
-   buf = (char *)mxml_malloc(length+1);
+
+   char* buf = (char *)mxml_malloc(length+1);
    if (buf == NULL) {
       close(fh);
       std::string msg = "";
-      msg += "Cannot allocate buffer: ";
-      char buf[256];
-      sprintf(buf, "errno %d (%s)", errno, strerror(errno));
-      msg += buf;
+      msg += "Cannot allocate buffer size ";
+      msg += toString(length);
+      msg += " for file \"";
+      msg += file_name;
+      msg += "\": ";
+      msg += toStrerror(errno);
       mxml_strlcpy(error, msg.c_str(), error_size);
       return NULL;
    }
 
    /* read complete file at once */
-   length = (int)read(fh, buf, length);
+   int rd = read(fh, buf, length);
+   if (rd != length) {
+      std::string msg = "";
+      msg += "Cannot read file \"";
+      msg += file_name;
+      msg += "\", read of ";
+      msg += toString(length);
+      msg += " returned ";
+      msg += toString(rd);
+      msg += ": ";
+      msg += toStrerror(errno);
+      mxml_strlcpy(error, msg.c_str(), error_size);
+      mxml_free(buf);
+      return NULL;
+   }
+
    buf[length] = 0;
    close(fh);
 
@@ -2082,7 +2127,7 @@ PMXML_NODE mxml_parse_file(const char *file_name, char *error, int error_size, i
       return NULL;
    }
 
-   root = mxml_parse_buffer(buf, error, error_size, error_line);
+   PMXML_NODE root = mxml_parse_buffer(buf, error, error_size, error_line);
 
    mxml_free(buf);
 
@@ -2373,3 +2418,10 @@ PMXML_NODE mxml_get_node_at_line(PMXML_NODE tree, int line_number)
    return NULL;
 }
 
+/* emacs
+ * Local Variables:
+ * tab-width: 8
+ * c-basic-offset: 3
+ * indent-tabs-mode: nil
+ * End:
+ */
