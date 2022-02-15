@@ -317,7 +317,10 @@ MXML_WRITER *mxml_open_file(const char *file_name)
  */
 void mxml_encode(char* buf, int buf_size, const char *src, int src_len, int translate)
 {
-   assert(buf_size > 6*src_len); // each input byte is expanded into 6 bytes at most
+   if (buf_size <= 6*src_len) {
+      printf("mxml_encode: buffer size too small\n");
+      exit(0);
+   }
    char *pd = buf;
    const char* ps;
    for (ps = src ; *ps ; ps++) {
