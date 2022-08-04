@@ -93,6 +93,7 @@
 #endif
 
 #include "mxml.h"
+#include "strlcpy.h"
 
 #define XML_INDENT "  "
 
