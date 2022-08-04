@@ -2192,6 +2192,46 @@ int mxml_write_tree(const char *file_name, PMXML_NODE tree)
 
 /*------------------------------------------------------------------*/
 
+/**
+ * write a complete XML tree to a buffer
+ */
+int mxml_print_tree(char *buffer, int *buffer_size, PMXML_NODE tree)
+{
+   int len;
+   char *p;
+   MXML_WRITER *writer;
+
+   /* open file */
+   writer = mxml_open_buffer();
+   if (writer == NULL)
+      return FALSE;
+
+   /* write XML header */
+   mxml_start_element(writer, "xml");
+
+   for (int i=0 ; i<tree->n_children ; i++)
+      if (tree->child[i].node_type == ELEMENT_NODE) /* skip PI and comments */
+         if (!mxml_write_subtree(writer, &tree->child[i], TRUE))
+            return FALSE;
+
+   mxml_end_element(writer); // "xml"
+   p = mxml_close_buffer(writer);
+
+   strlcpy(buffer, p, *buffer_size);
+   len = strlen(p);
+   free(p);
+   p = NULL;
+   if (len > *buffer_size) {
+      *buffer_size = 0;
+      return FALSE;
+   }
+
+   *buffer_size -= len;
+   return TRUE;
+}
+
+/*------------------------------------------------------------------*/
+
 PMXML_NODE mxml_clone_tree(PMXML_NODE tree)
 {
    PMXML_NODE clone;

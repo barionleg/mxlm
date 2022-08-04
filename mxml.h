@@ -136,7 +136,7 @@ PMXML_NODE mxml_create_root_node(void);
 PMXML_NODE mxml_parse_file(const char *file_name, char *error, int error_size, int *error_line);
 PMXML_NODE mxml_parse_buffer(const char *buffer, char *error, int error_size, int *error_line);
 int mxml_parse_entity(char **buf, const char* file_name, char *error, int error_size, int *error_line);
-int mxml_write_tree(const char *file_name, PMXML_NODE tree);
+int mxml_print_tree(char *buffer, int *buffer_size, PMXML_NODE tree);
 void mxml_debug_tree(PMXML_NODE tree, int level);
 void mxml_free_tree(PMXML_NODE tree);
 
