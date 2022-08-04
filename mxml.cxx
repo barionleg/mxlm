@@ -93,7 +93,6 @@
 #endif
 
 #include "mxml.h"
-#include "strlcpy.h"
 
 #define XML_INDENT "  "
 
@@ -2218,7 +2217,7 @@ int mxml_print_tree(char *buffer, int *buffer_size, PMXML_NODE tree)
    mxml_end_element(writer); // "xml"
    p = mxml_close_buffer(writer);
 
-   strlcpy(buffer, p, *buffer_size);
+   mxml_strlcpy(buffer, p, *buffer_size);
    len = strlen(p);
    free(p);
    p = NULL;
