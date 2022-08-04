@@ -33,7 +33,7 @@
    mxml_find_nodes(tree, xml_path, &nodelist);
 
    which support a subset of the XPath specification. Another set of
-   functions is availabe to retrieve attributes and values from nodes
+   functions is available to retrieve attributes and values from nodes
    in the tree and for manipulating nodes, like replacing, adding and
    deleting nodes.
    
