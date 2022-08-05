@@ -2206,15 +2206,11 @@ int mxml_print_tree(char *buffer, int *buffer_size, PMXML_NODE tree)
    if (writer == NULL)
       return FALSE;
 
-   /* write XML header */
-   mxml_start_element(writer, "xml");
-
    for (int i=0 ; i<tree->n_children ; i++)
       if (tree->child[i].node_type == ELEMENT_NODE) /* skip PI and comments */
          if (!mxml_write_subtree(writer, &tree->child[i], TRUE))
             return FALSE;
 
-   mxml_end_element(writer); // "xml"
    p = mxml_close_buffer(writer);
 
    mxml_strlcpy(buffer, p, *buffer_size);
