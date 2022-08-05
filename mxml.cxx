@@ -2212,17 +2212,16 @@ int mxml_print_tree(char *buffer, int *buffer_size, PMXML_NODE tree)
             return FALSE;
 
    p = mxml_close_buffer(writer);
-
-   mxml_strlcpy(buffer, p, *buffer_size);
-   len = strlen(p);
-   free(p);
-   p = NULL;
+   len = strlen(p) + 1;
    if (len > *buffer_size) {
+      free(p);
       *buffer_size = 0;
       return FALSE;
    }
 
-   *buffer_size -= len;
+   mxml_strlcpy(buffer, p, *buffer_size);
+   free(p);
+   *buffer_size = len;
    return TRUE;
 }
 
