@@ -159,7 +159,7 @@ static size_t mxml_strlcpy(char *dst, const char *src, size_t size)
 static std::string toString(int i)
 {
    char buf[100];
-   sprintf(buf, "%d", i);
+   snprintf(buf, sizeof(buf), "%d", i);
    return buf;
 }
 
@@ -168,7 +168,7 @@ static std::string toString(int i)
 static std::string toStrerror(int err)
 {
    char buf[256];
-   sprintf(buf, "errno %d (%s)", err, strerror(err));
+   snprintf(buf, sizeof(buf), "errno %d (%s)", err, strerror(err));
    return buf;
 }
 
@@ -240,7 +240,6 @@ MXML_WRITER *mxml_open_buffer(void)
       std::string str = ctime(&now);
       str.resize(24);
       std::string line = "";
-      //sprintf(line, "<!-- created by MXML on %s -->\n", str);
       line +=  "<!-- created by MXML on ";
       line += str;
       line += " -->\n";
@@ -279,7 +278,6 @@ MXML_WRITER *mxml_open_file(const char *file_name)
 
    if (writer->fh == -1) {
       std::string line = "";
-      //sprintf(line, "Unable to open file \"%s\": ", file_name);
       line += "Unable to open file \"";
       line += file_name;
       line += "\": ";
@@ -296,7 +294,6 @@ MXML_WRITER *mxml_open_file(const char *file_name)
       std::string str = ctime(&now);
       str.resize(24);
       std::string line = "";
-      //sprintf(line, "<!-- created by MXML on %s -->\n", str);
       line += "<!-- created by MXML on ";
       line += str;
       line += " -->\n";
@@ -1317,14 +1314,12 @@ PMXML_NODE read_error(PMXML_NODE root, const char *file_name, int line_number, c
 {
    std::string msg;
    if (file_name && file_name[0]) {
-      //sprintf(str, "XML read error in file \"%s\", line %d: ", file_name, line_number);
       msg += "XML read error in file \"";
       msg += file_name;
       msg += "\", line ";
       msg += toString(line_number);
       msg += ": ";
    } else {
-      //sprintf(str, "XML read error, line %d: ", line_number);
       msg += "XML read error, line ";
       msg += toString(line_number);
       msg += ": ";
@@ -1962,7 +1957,6 @@ int mxml_parse_entity(char **buf, const char *file_name, char *error, int error_
          if ( entity_reference_name[i][0] == DIR_SEPARATOR ) { /* absolute path */
             filename = entity_reference_name[i];
          } else { /* relative path */
-            //sprintf(filename, "%s%c%s", directoryname, DIR_SEPARATOR, entity_reference_name[i]);
             filename += directoryname;
             filename += DIR_SEPARATOR;
             filename += entity_reference_name[i];
@@ -2429,7 +2423,7 @@ void mxml_dirname(char *path)
    if (p == 0)                  /* current directory */
       strcpy(path, ".");
    else if (p == path)          /* root directory */
-      sprintf(path, "%c", *p);
+      snprintf(path, FILENAME_MAX, "%c", *p);
    else
       *p = 0;
 
